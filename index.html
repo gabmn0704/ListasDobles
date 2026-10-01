@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f1efe6">
+  <title>Marble Circuit | Zuma Run</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Marble Circuit home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>MARBLE<span class="brand-light">CIRCUIT</span></span>
+      </a>
+      <div class="topbar-right">
+        <span class="edition"><span class="live-dot"></span> ARCADE MODE <span class="edition-divider">/</span> 4 COURSES</span>
+        <button class="quiet-button" id="mapButton" type="button" hidden>Course map <span aria-hidden="true">↗</span></button>
+      </div>
+    </header>
+
+    <main>
+      <section class="level-screen" id="levelScreen" aria-labelledby="pageTitle">
+        <div class="map-intro">
+          <div>
+            <p class="eyebrow"><span>THE CIRCUIT</span><i></i> COURSE SELECT</p>
+            <h1 id="pageTitle">Pick your <span>run.</span></h1>
+          </div>
+          <p class="intro-note">A moving chain. One loaded shot.<br>Clear the colors before they reach the skull.</p>
+        </div>
+        <div class="map-layout">
+          <section class="course-section" aria-label="Available courses">
+            <div class="section-heading"><span>COURSES</span><span id="unlockCount">01 / 04 OPEN</span></div>
+            <div class="course-grid" id="courseGrid"></div>
+          </section>
+          <aside class="briefing-panel">
+            <div class="briefing-top"><span>MISSION BRIEF</span><span class="briefing-icon" aria-hidden="true">↗</span></div>
+            <p class="briefing-number" id="selectedNumber">COURSE 01</p>
+            <h2 id="selectedTitle">Emerald Path</h2>
+            <p class="briefing-copy" id="selectedDescription">A forgiving first run. Learn the curve, find the gaps, break the chain.</p>
+            <div class="briefing-stats">
+              <div><span>MARBLES</span><strong id="selectedMarbles">12</strong></div>
+              <div><span>COLORS</span><strong id="selectedColors">3</strong></div>
+              <div><span>TIME</span><strong id="selectedTime">78s</strong></div>
+            </div>
+            <button class="launch-button" id="launchButton" type="button">Start course <span aria-hidden="true">↗</span></button>
+            <div class="rules-note"><span class="rules-orb" aria-hidden="true">3+</span><span>Match 3 or more. Clear every marble. Keep the train away from the skull.</span></div>
+          </aside>
+        </div>
+        <div class="map-footer-note"><span>01 <i></i> AIM WITH YOUR POINTER</span><span>02 <i></i> COLOR IS RANDOM</span><span>03 <i></i> CLEAR TO UNLOCK</span></div>
+      </section>
+
+      <section class="game-screen" id="gameScreen" hidden aria-label="Active game">
+        <div class="game-toolbar">
+          <button class="back-button" id="backToMapButton" type="button"><span aria-hidden="true">←</span> Course map</button>
+          <div class="active-course"><span class="active-course-index" id="activeCourseIndex">01</span><span><strong id="activeCourseTitle">EMERALD PATH</strong><small id="activeCourseSubtitle">COURSE 01 / 04</small></span></div>
+          <button class="restart-button" id="restartButton" type="button">Restart <span aria-hidden="true">↻</span></button>
+        </div>
+        <div class="game-layout">
+          <section class="board-section" aria-label="Zuma-style marble board">
+            <div class="board-shell" id="boardShell">
+              <canvas id="gameCanvas" width="600" height="600" aria-label="Aim at the moving marble chain and click to fire"></canvas>
+              <div class="board-hint"><span class="aim-reticle" aria-hidden="true">+</span><span>AIM &amp; FIRE</span></div>
+              <div class="shot-toast" id="shotToast" role="status" aria-live="polite"></div>
+              <div class="outcome-panel" id="outcomePanel" hidden>
+                <span class="outcome-kicker" id="outcomeKicker">COURSE CLEAR</span>
+                <h2 id="outcomeTitle">Beautiful shot.</h2>
+                <p id="outcomeCopy">The track is clear. Choose what comes next.</p>
+                <div class="outcome-actions">
+                  <button class="launch-button" id="outcomePrimary" type="button">Continue <span aria-hidden="true">↗</span></button>
+                  <button class="quiet-button" id="outcomeSecondary" type="button">Course map</button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <aside class="game-sidebar">
+            <section class="score-panel" aria-label="Run statistics">
+              <div class="score-row"><span>SCORE</span><strong id="scoreValue">000000</strong></div>
+              <div class="score-pair">
+                <div><span>SHOTS</span><strong id="shotsValue">00</strong></div>
+                <div><span>CHAIN</span><strong><b id="marblesValue">12</b><small> BALLS</small></strong></div>
+                <div><span>TIME</span><strong><b id="timeValue">78</b><small> SEC</small></strong></div>
+              </div>
+              <div class="lives-row"><span>FROG LIVES</span><div class="life-markers" id="lifeMarkers" aria-label="Three lives"></div></div>
+            </section>
+            <section class="ammo-panel" aria-labelledby="ammoTitle">
+              <div class="ammo-heading"><span id="ammoTitle">AUTO-LOADED</span><span class="random-tag"><i></i> RANDOM</span></div>
+              <div class="ammo-row">
+                <div class="ammo-ball-wrap"><span class="ammo-ball" id="currentAmmo" data-color="coral"></span><span>CURRENT</span></div>
+                <span class="ammo-arrow" aria-hidden="true">→</span>
+                <div class="ammo-ball-wrap ammo-next"><span class="ammo-ball" id="nextAmmo" data-color="aqua"></span><span>NEXT UP</span></div>
+              </div>
+              <p>The game chooses both colors. Aim for a useful gap.</p>
+            </section>
+            <section class="course-progress-panel" aria-label="Course progress">
+              <div class="progress-heading"><span>TO THE SKULL</span><span id="progressValue">00%</span></div>
+              <div class="progress-track"><span id="progressFill"></span></div>
+              <div class="course-progress-note"><span>ENTRY</span><span>EXIT</span></div>
+            </section>
+            <section class="pointer-panel" aria-labelledby="pointerTitle">
+              <div class="pointer-panel-kicker">THE DATA STRUCTURE</div>
+              <h2 id="pointerTitle">Aim in the game.<br>Link in the code.</h2>
+              <div class="pointer-diagram" aria-label="Previous pointer, marble object, next pointer"><span>prev</span><b>←</b><strong>MARBLE</strong><b>→</b><span>next</span></div>
+              <p>Every ball is an object linked to its neighbors. Hits insert and remove nodes in Python.</p>
+              <span class="class-stamp">DOUBLY LINKED <i>·</i> OOP</span>
+            </section>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer"><span>MARBLE CIRCUIT <b>·</b> POINTER-POWERED ARCADE</span><span>ORIGINAL GAMEPLAY BUILD <b>©</b> 2026</span></footer>
+  </div>
+  <svg class="path-measurement" viewBox="0 0 600 600" aria-hidden="true"><path id="pathMeasure"></path></svg>
+
+  <script>
+    const COURSES = {
+      1: { title: "Emerald Path", shortTitle: "EMERALD PATH", balls: 12, colors: 3, duration: 78, speed: "STEADY", description: "A forgiving first run. Learn the curve, find the gaps, break the chain.", path: "M 48 152 C 44 66 142 36 257 47 C 397 59 527 105 540 220 C 557 346 480 447 365 448 C 251 449 171 388 168 298 C 166 213 225 163 302 164 C 378 165 420 220 394 278 C 374 324 339 342 295 330 C 267 322 252 300 260 269" },
+      2: { title: "Copper Switchback", shortTitle: "COPPER SWITCHBACK", balls: 15, colors: 3, duration: 68, speed: "QUICK", description: "A longer climb with a tight inner turn. Keep your eye on the leading ball.", path: "M 535 445 C 552 351 535 244 462 165 C 390 87 281 52 174 77 C 75 100 41 184 72 264 C 101 340 190 373 281 351 C 368 329 430 268 412 206 C 395 149 317 127 252 156 C 196 181 180 234 207 276 C 231 314 281 318 317 294 C 345 275 348 242 325 220" },
+      3: { title: "Cinder Loop", shortTitle: "CINDER LOOP", balls: 18, colors: 4, duration: 58, speed: "FAST", description: "Four colors and two crossing turns. Plan each shot before the track closes.", path: "M 48 324 C 42 197 78 81 196 55 C 319 28 504 78 543 204 C 578 318 508 425 392 439 C 274 454 124 385 94 285 C 69 201 131 136 227 135 C 329 134 430 187 433 268 C 436 338 366 384 287 355 C 213 328 175 274 203 225 C 227 183 286 176 328 206 C 360 230 357 269 330 288" },
+      4: { title: "Midnight Coil", shortTitle: "MIDNIGHT COIL", balls: 21, colors: 4, duration: 48, speed: "FULL TILT", description: "The final course moves fast, packs four colors and leaves no easy gaps.", path: "M 53 91 C 164 37 381 38 501 121 C 584 179 567 318 493 404 C 408 502 205 494 100 418 C 19 359 40 229 124 159 C 217 82 385 103 447 176 C 503 242 468 345 398 386 C 319 431 188 381 154 308 C 125 245 173 174 247 157 C 318 140 409 185 405 252 C 402 310 346 341 290 326" }
+    };
+
+    const levelScreen = document.querySelector("#levelScreen");
+    const gameScreen = document.querySelector("#gameScreen");
+    const courseGrid = document.querySelector("#courseGrid");
+    const launchButton = document.querySelector("#launchButton");
+    const selectedNumber = document.querySelector("#selectedNumber");
+    const selectedTitle = document.querySelector("#selectedTitle");
+    const selectedDescription = document.querySelector("#selectedDescription");
+    const selectedMarbles = document.querySelector("#selectedMarbles");
+    const selectedColors = document.querySelector("#selectedColors");
+    const selectedTime = document.querySelector("#selectedTime");
+    const unlockCount = document.querySelector("#unlockCount");
+    const mapButton = document.querySelector("#mapButton");
+    const backToMapButton = document.querySelector("#backToMapButton");
+    const restartButton = document.querySelector("#restartButton");
+    const canvas = document.querySelector("#gameCanvas");
+    const context = canvas.getContext("2d");
+    const pathMeasure = document.querySelector("#pathMeasure");
+    const scoreValue = document.querySelector("#scoreValue");
+    const shotsValue = document.querySelector("#shotsValue");
+    const marblesValue = document.querySelector("#marblesValue");
+    const timeValue = document.querySelector("#timeValue");
+    const progressValue = document.querySelector("#progressValue");
+    const progressFill = document.querySelector("#progressFill");
+    const lifeMarkers = document.querySelector("#lifeMarkers");
+    const currentAmmo = document.querySelector("#currentAmmo");
+    const nextAmmo = document.querySelector("#nextAmmo");
+    const shotToast = document.querySelector("#shotToast");
+    const outcomePanel = document.querySelector("#outcomePanel");
+    const outcomeKicker = document.querySelector("#outcomeKicker");
+    const outcomeTitle = document.querySelector("#outcomeTitle");
+    const outcomeCopy = document.querySelector("#outcomeCopy");
+    const outcomePrimary = document.querySelector("#outcomePrimary");
+    const outcomeSecondary = document.querySelector("#outcomeSecondary");
+    const activeCourseIndex = document.querySelector("#activeCourseIndex");
+    const activeCourseTitle = document.querySelector("#activeCourseTitle");
+    const activeCourseSubtitle = document.querySelector("#activeCourseSubtitle");
+    const FROG_X = 300;
+    const FROG_Y = 330;
+    const MARBLE_SPACING = 28;
+    const MARBLE_RADIUS = 13;
+    const MARBLE_COLORS = { coral: "#ef674b", sun: "#f2c449", aqua: "#51c5bd", lime: "#a7d65b" };
+    let selectedLevel = 1;
+    let unlockedLevel = 1;
+    let gameState = null;
+    let stateReceivedAt = 0;
+    let routeShape = null;
+    let routeLength = 0;
+    let activeCourse = 0;
+    let aimX = 410;
+    let aimY = 300;
+    let isSubmitting = false;
+    let seenEventCount = 0;
+    let shotAnimation = null;
+    let pendingClear = null;
+
+    async function api(path, payload) {
+      const options = payload === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) };
+      const response = await fetch(path, options);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "The game request failed.");
+      return result;
+    }
+
+    function renderCourseGrid() {
+      let markup = "";
+      for (let level = 1; level <= 4; level += 1) {
+        const course = COURSES[level];
+        const locked = level > unlockedLevel;
+        markup += `<button class="course-card${level === selectedLevel ? " is-selected" : ""}${locked ? " is-locked" : ""}" type="button" data-level="${level}"${locked ? " disabled" : ""} aria-label="${locked ? "Locked course" : `Select ${course.title}`}" aria-pressed="${level === selectedLevel}">
+          <span class="course-card-top"><span>${String(level).padStart(2, "0")}</span><span>${locked ? "LOCKED" : course.speed}</span></span>
+          <svg class="course-preview" viewBox="0 0 600 600" aria-hidden="true"><path d="${course.path}"></path></svg>
+          <span class="course-card-bottom"><strong>${course.title}</strong><small>${course.balls} MARBLES <i>·</i> ${course.colors} COLORS</small></span>
+          ${locked ? '<span class="lock-mark" aria-hidden="true">×</span>' : ""}
+        </button>`;
+      }
+      courseGrid.innerHTML = markup;
+      unlockCount.textContent = `${String(unlockedLevel).padStart(2, "0")} / 04 OPEN`;
+      updateSelectedCourse();
+    }
+
+    function updateSelectedCourse() {
+      const course = COURSES[selectedLevel];
+      selectedNumber.textContent = `COURSE ${String(selectedLevel).padStart(2, "0")}`;
+      selectedTitle.textContent = course.title;
+      selectedDescription.textContent = course.description;
+      selectedMarbles.textContent = String(course.balls).padStart(2, "0");
+      selectedColors.textContent = String(course.colors).padStart(2, "0");
+      selectedTime.textContent = `${course.duration}s`;
+      launchButton.innerHTML = `Start ${String(selectedLevel).padStart(2, "0")} <span aria-hidden="true">↗</span>`;
+    }
+
+    async function showLevelMap() {
+      try {
+        const clearedLevel = gameState && gameState.status === "stage_clear" ? gameState.level : 0;
+        const state = await api("/api/menu", {});
+        unlockedLevel = Math.max(unlockedLevel, state.unlocked_level);
+        selectedLevel = clearedLevel ? Math.min(clearedLevel + 1, unlockedLevel) : Math.min(selectedLevel, unlockedLevel);
+        renderCourseGrid();
+        gameScreen.hidden = true;
+        levelScreen.hidden = false;
+        mapButton.hidden = true;
+        outcomePanel.hidden = true;
+      } catch (error) {
+        selectedDescription.textContent = error.message;
+      }
+    }
+
+    async function startLevel(level) {
+      isSubmitting = true;
+      launchButton.disabled = true;
+      try {
+        const state = await api("/api/start", { level });
+        enterGame(state);
+      } catch (error) {
+        selectedDescription.textContent = error.message;
+      } finally {
+        isSubmitting = false;
+        launchButton.disabled = false;
+      }
+    }
+
+    function enterGame(state) {
+      levelScreen.hidden = true;
+      gameScreen.hidden = false;
+      mapButton.hidden = false;
+      outcomePanel.hidden = true;
+      seenEventCount = state.event_count;
+      shotToast.textContent = "";
+      shotAnimation = null;
+      pendingClear = null;
+      updateGameState(state);
+      resizeCanvas();
+      requestAnimationFrame(drawFrame);
+    }
+
+    function updateGameState(state) {
+      const oldLevel = gameState ? gameState.level : state.level;
+      gameState = state;
+      stateReceivedAt = performance.now();
+      unlockedLevel = Math.max(unlockedLevel, state.unlocked_level);
+      if (state.level !== activeCourse) {
+        activeCourse = state.level;
+        const course = COURSES[activeCourse];
+        pathMeasure.setAttribute("d", course.path);
+        routeShape = new Path2D(course.path);
+        routeLength = pathMeasure.getTotalLength();
+      }
+      activeCourseIndex.textContent = String(state.level).padStart(2, "0");
+      activeCourseTitle.textContent = COURSES[state.level].shortTitle;
+      activeCourseSubtitle.textContent = `COURSE ${String(state.level).padStart(2, "0")} / 04`;
+      scoreValue.textContent = String(state.score).padStart(6, "0");
+      shotsValue.textContent = String(state.shots).padStart(2, "0");
+      marblesValue.textContent = String(state.marbles_left).padStart(2, "0");
+      timeValue.textContent = String(state.time_left).padStart(2, "0");
+      currentAmmo.dataset.color = state.current_color;
+      nextAmmo.dataset.color = state.next_color;
+      currentAmmo.setAttribute("aria-label", `${state.current_color} marble ready to fire`);
+      nextAmmo.setAttribute("aria-label", `${state.next_color} marble next in queue`);
+      progressValue.textContent = `${String(Math.floor(state.progress)).padStart(2, "0")}%`;
+      progressFill.style.width = `${state.progress}%`;
+      renderLives(state.lives);
+      if (state.event_count > seenEventCount) {
+        seenEventCount = state.event_count;
+        shotToast.textContent = state.last_event === "life_lost" ? "The chain escaped. One life lost." : "";
+      }
+      if (state.level !== oldLevel && state.level > oldLevel) shotToast.textContent = "Course clear. New route unlocked.";
+      renderOutcome(state);
+    }
+
+    function renderLives(lives) {
+      let markup = "";
+      for (let life = 1; life <= 3; life += 1) markup += `<span class="life-orb${life <= lives ? " is-live" : ""}" aria-hidden="true"></span>`;
+      lifeMarkers.innerHTML = markup;
+      lifeMarkers.setAttribute("aria-label", `${lives} lives remaining`);
+    }
+
+    function renderOutcome(state) {
+      if (state.status === "playing" || state.status === "menu") {
+        outcomePanel.hidden = true;
+        return;
+      }
+      outcomePanel.hidden = false;
+      if (state.status === "stage_clear") {
+        outcomeKicker.textContent = "COURSE CLEAR";
+        outcomeTitle.textContent = "Beautiful shot.";
+        outcomeCopy.textContent = `Course ${String(state.level).padStart(2, "0")} cleared. Course ${String(state.unlocked_level).padStart(2, "0")} is now open.`;
+        outcomePrimary.textContent = "Next course ↗";
+        outcomePrimary.dataset.action = "next";
+      } else if (state.status === "won") {
+        outcomeKicker.textContent = "ALL COURSES CLEARED";
+        outcomeTitle.textContent = "Circuit master.";
+        outcomeCopy.textContent = `Final score ${String(state.score).padStart(6, "0")}. Every route, every color.`;
+        outcomePrimary.textContent = "Play again ↗";
+        outcomePrimary.dataset.action = "again";
+      } else {
+        outcomeKicker.textContent = "THREE LIVES USED";
+        outcomeTitle.textContent = "The chain escaped.";
+        outcomeCopy.textContent = "Try the course again or choose another unlocked route.";
+        outcomePrimary.textContent = "Retry course ↗";
+        outcomePrimary.dataset.action = "retry";
+      }
+      outcomePrimary.hidden = false;
+    }
+
+    function estimatedProgress() {
+      if (!gameState || gameState.status !== "playing") return gameState ? gameState.progress : 0;
+      const elapsed = (performance.now() - stateReceivedAt) / 1000;
+      return Math.min(99.8, gameState.progress + elapsed * 100 / gameState.level_duration);
+    }
+
+    function headDistance(progress) {
+      const course = COURSES[gameState.level];
+      const leadStart = Math.min(routeLength * .52, (course.balls - 1) * MARBLE_SPACING + 125);
+      return Math.max(20, leadStart + progress / 100 * (routeLength - leadStart - 28) - gameState.pullback);
+    }
+
+    function drawMarble(x, y, color, radius, opacity = 1) {
+      const gradient = context.createRadialGradient(x - radius * .36, y - radius * .43, radius * .12, x, y, radius * 1.15);
+      gradient.addColorStop(0, "#ffffff");
+      gradient.addColorStop(.18, color);
+      gradient.addColorStop(1, shadeColor(color));
+      context.save();
+      context.globalAlpha = opacity;
+      context.shadowColor = "#080e0c9c";
+      context.shadowBlur = 5;
+      context.shadowOffsetY = 2;
+      context.beginPath();
+      context.arc(x, y, radius, 0, Math.PI * 2);
+      context.fillStyle = gradient;
+      context.fill();
+      context.shadowColor = "transparent";
+      context.shadowBlur = 0;
+      context.lineWidth = 1.3;
+      context.strokeStyle = "#fff9e7c9";
+      context.stroke();
+      context.beginPath();
+      context.ellipse(x - radius * .33, y - radius * .42, radius * .29, radius * .15, -.7, 0, Math.PI * 2);
+      context.fillStyle = "#ffffffb7";
+      context.fill();
+      context.restore();
+    }
+
+    function shadeColor(color) {
+      if (color === "#ef674b") return "#873928";
+      if (color === "#f2c449") return "#a47720";
+      if (color === "#51c5bd") return "#23716e";
+      return "#557b27";
+    }
+
+    function colorName(code) {
+      if (code === "C") return "coral";
+      if (code === "S") return "sun";
+      if (code === "A") return "aqua";
+      return "lime";
+    }
+
+    function drawChain(progress) {
+      const lead = headDistance(progress);
+      const clearProgress = pendingClear ? Math.max(0, Math.min(1, (performance.now() - pendingClear.startedAt) / pendingClear.duration)) : 0;
+      for (let index = gameState.chain.length - 1; index >= 0; index -= 1) {
+        const distance = lead - index * MARBLE_SPACING;
+        if (distance < 0 || distance > routeLength) continue;
+        const point = pathMeasure.getPointAtLength(distance);
+        const isClearing = pendingClear && pendingClear.pattern === gameState.chain && index >= pendingClear.start && index < pendingClear.end;
+        const fade = isClearing ? clearProgress : 0;
+        drawMarble(point.x, point.y, MARBLE_COLORS[colorName(gameState.chain[index])], MARBLE_RADIUS * (1 - fade * .82), 1 - fade);
+      }
+    }
+
+    function drawExit(x, y) {
+      context.save();
+      context.shadowColor = "#f3654b";
+      context.shadowBlur = 15;
+      context.beginPath();
+      context.arc(x, y, 17, 0, Math.PI * 2);
+      context.fillStyle = "#ed674d";
+      context.fill();
+      context.shadowBlur = 0;
+      context.beginPath();
+      context.arc(x, y, 11, 0, Math.PI * 2);
+      context.fillStyle = "#2a201d";
+      context.fill();
+      context.fillStyle = "#ffe7ca";
+      context.beginPath();
+      context.arc(x, y - 1, 7, Math.PI, 0);
+      context.lineTo(x + 6, y + 5);
+      context.lineTo(x - 6, y + 5);
+      context.closePath();
+      context.fill();
+      context.fillStyle = "#3c3028";
+      context.beginPath();
+      context.arc(x - 3, y + 1, 1.3, 0, Math.PI * 2);
+      context.arc(x + 3, y + 1, 1.3, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+
+    function drawTrack(progress) {
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.strokeStyle = "#101c18";
+      context.lineWidth = 48;
+      context.stroke(routeShape);
+      context.strokeStyle = "#998269";
+      context.lineWidth = 39;
+      context.stroke(routeShape);
+      context.strokeStyle = "#594b3a";
+      context.lineWidth = 29;
+      context.stroke(routeShape);
+      context.strokeStyle = "#d2b68a66";
+      context.lineWidth = 2;
+      context.setLineDash([3, 11]);
+      context.stroke(routeShape);
+      context.setLineDash([]);
+      const entry = pathMeasure.getPointAtLength(0);
+      const exit = pathMeasure.getPointAtLength(routeLength);
+      context.beginPath();
+      context.arc(entry.x, entry.y, 14, 0, Math.PI * 2);
+      context.fillStyle = "#b9ed70";
+      context.fill();
+      context.beginPath();
+      context.arc(entry.x, entry.y, 8, 0, Math.PI * 2);
+      context.fillStyle = "#15392d";
+      context.fill();
+      drawExit(exit.x, exit.y);
+      drawChain(progress);
+    }
+
+    function drawFrog() {
+      const angle = Math.atan2(aimY - FROG_Y, aimX - FROG_X);
+      context.save();
+      context.translate(FROG_X, FROG_Y);
+      context.rotate(angle);
+      context.shadowColor = "#071611a8";
+      context.shadowBlur = 15;
+      context.shadowOffsetY = 7;
+      context.beginPath();
+      context.ellipse(-2, 4, 30, 24, 0, 0, Math.PI * 2);
+      const body = context.createRadialGradient(-9, -9, 2, 0, 2, 34);
+      body.addColorStop(0, "#b5ea75");
+      body.addColorStop(.55, "#68b84f");
+      body.addColorStop(1, "#286743");
+      context.fillStyle = body;
+      context.fill();
+      context.shadowColor = "transparent";
+      context.shadowBlur = 0;
+      context.beginPath();
+      context.ellipse(-4, 11, 17, 10, 0, 0, Math.PI * 2);
+      context.fillStyle = "#e7d888";
+      context.fill();
+      context.beginPath();
+      context.arc(13, -11, 10, 0, Math.PI * 2);
+      context.arc(13, 11, 10, 0, Math.PI * 2);
+      context.fillStyle = "#71c254";
+      context.fill();
+      context.beginPath();
+      context.arc(16, -11, 5.2, 0, Math.PI * 2);
+      context.arc(16, 11, 5.2, 0, Math.PI * 2);
+      context.fillStyle = "#f6f0d7";
+      context.fill();
+      context.beginPath();
+      context.arc(18, -11, 2.4, 0, Math.PI * 2);
+      context.arc(18, 11, 2.4, 0, Math.PI * 2);
+      context.fillStyle = "#1e2a1d";
+      context.fill();
+      context.beginPath();
+      context.moveTo(18, 0);
+      context.lineTo(40, 0);
+      context.strokeStyle = "#d7f2a4";
+      context.lineWidth = 4;
+      context.lineCap = "round";
+      context.stroke();
+      drawMarble(43, 0, MARBLE_COLORS[gameState.current_color], 11);
+      drawMarble(-11, 30, MARBLE_COLORS[gameState.next_color], 7);
+      context.restore();
+    }
+
+    function drawAimLine() {
+      context.save();
+      context.beginPath();
+      context.moveTo(FROG_X, FROG_Y);
+      context.lineTo(aimX, aimY);
+      context.setLineDash([5, 8]);
+      context.strokeStyle = "#d8f4ac47";
+      context.lineWidth = 1.5;
+      context.stroke();
+      context.setLineDash([]);
+      context.beginPath();
+      context.arc(aimX, aimY, 8, 0, Math.PI * 2);
+      context.strokeStyle = "#d8f4acb0";
+      context.lineWidth = 1.3;
+      context.stroke();
+      context.restore();
+    }
+
+    function drawShotEffect() {
+      if (!shotAnimation) return;
+      const elapsed = performance.now() - shotAnimation.startedAt;
+      const travelDuration = 210;
+      if (elapsed > 650) {
+        shotAnimation = null;
+        return;
+      }
+      context.save();
+      if (elapsed < travelDuration) {
+        const progress = elapsed / travelDuration;
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const x = FROG_X + (shotAnimation.x - FROG_X) * eased;
+        const y = FROG_Y + (shotAnimation.y - FROG_Y) * eased;
+        context.beginPath();
+        context.moveTo(FROG_X, FROG_Y);
+        context.lineTo(x, y);
+        context.strokeStyle = `${shotAnimation.color}99`;
+        context.lineWidth = 3;
+        context.stroke();
+        drawMarble(x, y, shotAnimation.color, 10);
+      } else {
+        const burst = Math.min(1, (elapsed - travelDuration) / 440);
+        context.globalAlpha = 1 - burst;
+        context.beginPath();
+        context.arc(shotAnimation.x, shotAnimation.y, 5 + burst * 28, 0, Math.PI * 2);
+        context.strokeStyle = shotAnimation.color;
+        context.lineWidth = 3 * (1 - burst) + .5;
+        context.shadowColor = shotAnimation.color;
+        context.shadowBlur = 12;
+        context.stroke();
+        context.shadowBlur = 0;
+        for (let spark = 0; spark < 8; spark += 1) {
+          const angle = spark * Math.PI / 4;
+          const innerRadius = 7 + burst * 9;
+          const outerRadius = innerRadius + 5 * (1 - burst);
+          context.beginPath();
+          context.moveTo(shotAnimation.x + Math.cos(angle) * innerRadius, shotAnimation.y + Math.sin(angle) * innerRadius);
+          context.lineTo(shotAnimation.x + Math.cos(angle) * outerRadius, shotAnimation.y + Math.sin(angle) * outerRadius);
+          context.strokeStyle = "#fff1b7";
+          context.lineWidth = 2;
+          context.stroke();
+        }
+      }
+      context.restore();
+    }
+
+    function drawFrame() {
+      if (gameScreen.hidden || !gameState || !routeShape) return;
+      const scale = canvas.width / 600;
+      context.setTransform(scale, 0, 0, scale, 0, 0);
+      context.clearRect(0, 0, 600, 600);
+      const background = context.createRadialGradient(300, 275, 20, 300, 300, 440);
+      background.addColorStop(0, "#285244");
+      background.addColorStop(.62, "#1b4035");
+      background.addColorStop(1, "#102a24");
+      context.fillStyle = background;
+      context.fillRect(0, 0, 600, 600);
+      for (let mark = 0; mark < 70; mark += 1) {
+        const x = (mark * 83 + 19) % 600;
+        const y = (mark * 137 + 31) % 600;
+        context.fillStyle = mark % 4 === 0 ? "#e2edca18" : "#e2edca0b";
+        context.fillRect(x, y, mark % 4 === 0 ? 2 : 1, mark % 4 === 0 ? 2 : 1);
+      }
+      drawTrack(estimatedProgress());
+      drawAimLine();
+      drawFrog();
+      drawShotEffect();
+      requestAnimationFrame(drawFrame);
+    }
+
+    function resizeCanvas() {
+      const bounds = canvas.getBoundingClientRect();
+      if (!bounds.width) return;
+      const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(bounds.width * pixelRatio);
+      canvas.height = Math.round(bounds.height * pixelRatio);
+    }
+
+    function pointerPosition(event) {
+      const bounds = canvas.getBoundingClientRect();
+      return { x: (event.clientX - bounds.left) * 600 / bounds.width, y: (event.clientY - bounds.top) * 600 / bounds.height };
+    }
+
+    function findInsertionPosition(targetX, targetY) {
+      const directionX = targetX - FROG_X;
+      const directionY = targetY - FROG_Y;
+      const directionLength = Math.hypot(directionX, directionY) || 1;
+      const unitX = directionX / directionLength;
+      const unitY = directionY / directionLength;
+      const lead = headDistance(estimatedProgress());
+      let bestPosition = 0;
+      let bestScore = Infinity;
+      for (let position = 0; position <= gameState.chain.length; position += 1) {
+        const distance = lead - (position - .5) * MARBLE_SPACING;
+        if (distance < 0 || distance > routeLength) continue;
+        const point = pathMeasure.getPointAtLength(distance);
+        const offsetX = point.x - FROG_X;
+        const offsetY = point.y - FROG_Y;
+        const projection = offsetX * unitX + offsetY * unitY;
+        if (projection <= 0) continue;
+        const missDistance = Math.abs(offsetX * unitY - offsetY * unitX);
+        const score = missDistance + projection * .0005;
+        if (score < bestScore) {
+          bestScore = score;
+          bestPosition = position;
+        }
+      }
+      return bestPosition;
+    }
+
+    function findMatchingRange(pattern, position, colorNameValue) {
+      const codesByName = { coral: "C", sun: "S", aqua: "A", lime: "L" };
+      const code = codesByName[colorNameValue];
+      let start = position;
+      let end = position;
+      while (start > 0 && pattern[start - 1] === code) start -= 1;
+      while (end < pattern.length && pattern[end] === code) end += 1;
+      const count = position - start + 1 + end - position;
+      return count >= 3 ? { start, end } : null;
+    }
+
+    function insertionPoint(position) {
+      const distance = headDistance(estimatedProgress()) - (position - .5) * MARBLE_SPACING;
+      return pathMeasure.getPointAtLength(Math.max(0, Math.min(routeLength, distance)));
+    }
+
+    async function fireAtPointer(event) {
+      if (!gameState || gameState.status !== "playing" || isSubmitting) return;
+      event.preventDefault();
+      const target = pointerPosition(event);
+      aimX = target.x;
+      aimY = target.y;
+      const position = findInsertionPosition(target.x, target.y);
+      const impact = insertionPoint(position);
+      const oldPattern = gameState.chain;
+      const matchRange = findMatchingRange(oldPattern, position, gameState.current_color);
+      const shotStartedAt = performance.now();
+      shotAnimation = { x: impact.x, y: impact.y, color: MARBLE_COLORS[gameState.current_color], startedAt: shotStartedAt };
+      isSubmitting = true;
+      try {
+        const result = await api("/api/shoot", { position });
+        if (result.removed > 0 && matchRange) {
+          pendingClear = { pattern: oldPattern, ...matchRange, startedAt: shotStartedAt + 210, duration: 280 };
+        }
+        const animationEnd = shotStartedAt + (result.removed > 0 ? 650 : 350);
+        await new Promise((resolve) => window.setTimeout(resolve, Math.max(0, animationEnd - performance.now())));
+        pendingClear = null;
+        updateGameState(await api("/api/state"));
+        if (result.status === "stage_clear") shotToast.textContent = "Track clear. Next course unlocked.";
+        else if (result.status === "won") shotToast.textContent = "Every course cleared. Circuit master.";
+        else if (result.removed > 0) shotToast.textContent = `${result.removed} matching marbles cleared`;
+        else shotToast.textContent = "No match. The chain keeps moving.";
+      } catch (error) {
+        shotToast.textContent = error.message;
+      } finally {
+        isSubmitting = false;
+      }
+    }
+
+    function renderOutcome(state) {
+      if (state.status === "playing" || state.status === "menu") {
+        outcomePanel.hidden = true;
+        return;
+      }
+      outcomePanel.hidden = false;
+      if (state.status === "stage_clear") {
+        outcomeKicker.textContent = "COURSE CLEAR";
+        outcomeTitle.textContent = "Beautiful shot.";
+        outcomeCopy.textContent = `Course ${String(state.level).padStart(2, "0")} cleared. Course ${String(state.unlocked_level).padStart(2, "0")} is now open.`;
+        outcomePrimary.textContent = "Next course ↗";
+        outcomePrimary.dataset.action = "next";
+      } else if (state.status === "won") {
+        outcomeKicker.textContent = "ALL COURSES CLEARED";
+        outcomeTitle.textContent = "Circuit master.";
+        outcomeCopy.textContent = `Final score ${String(state.score).padStart(6, "0")}. Every route, every color.`;
+        outcomePrimary.textContent = "Play again ↗";
+        outcomePrimary.dataset.action = "again";
+      } else {
+        outcomeKicker.textContent = "THREE LIVES USED";
+        outcomeTitle.textContent = "The chain escaped.";
+        outcomeCopy.textContent = "Try the course again or choose another unlocked route.";
+        outcomePrimary.textContent = "Retry course ↗";
+        outcomePrimary.dataset.action = "retry";
+      }
+      outcomePrimary.hidden = false;
+    }
+
+    function renderLives(lives) {
+      let markup = "";
+      for (let life = 1; life <= 3; life += 1) markup += `<span class="life-orb${life <= lives ? " is-live" : ""}" aria-hidden="true"></span>`;
+      lifeMarkers.innerHTML = markup;
+      lifeMarkers.setAttribute("aria-label", `${lives} lives remaining`);
+    }
+
+    function updateGameState(state) {
+      const oldLevel = gameState ? gameState.level : state.level;
+      gameState = state;
+      stateReceivedAt = performance.now();
+      unlockedLevel = Math.max(unlockedLevel, state.unlocked_level);
+      if (state.level !== activeCourse) {
+        activeCourse = state.level;
+        pathMeasure.setAttribute("d", COURSES[activeCourse].path);
+        routeShape = new Path2D(COURSES[activeCourse].path);
+        routeLength = pathMeasure.getTotalLength();
+      }
+      activeCourseIndex.textContent = String(state.level).padStart(2, "0");
+      activeCourseTitle.textContent = COURSES[state.level].shortTitle;
+      activeCourseSubtitle.textContent = `COURSE ${String(state.level).padStart(2, "0")} / 04`;
+      scoreValue.textContent = String(state.score).padStart(6, "0");
+      shotsValue.textContent = String(state.shots).padStart(2, "0");
+      marblesValue.textContent = String(state.marbles_left).padStart(2, "0");
+      timeValue.textContent = String(state.time_left).padStart(2, "0");
+      currentAmmo.dataset.color = state.current_color;
+      nextAmmo.dataset.color = state.next_color;
+      currentAmmo.setAttribute("aria-label", `${state.current_color} marble ready to fire`);
+      nextAmmo.setAttribute("aria-label", `${state.next_color} marble next in queue`);
+      progressValue.textContent = `${String(Math.floor(state.progress)).padStart(2, "0")}%`;
+      progressFill.style.width = `${state.progress}%`;
+      renderLives(state.lives);
+      if (state.event_count > seenEventCount) {
+        seenEventCount = state.event_count;
+        shotToast.textContent = state.last_event === "life_lost" ? "The chain escaped. One life lost." : "";
+      }
+      if (state.level !== oldLevel && state.level > oldLevel) shotToast.textContent = "Course clear. New route unlocked.";
+      renderOutcome(state);
+    }
+
+    function estimatedProgress() {
+      if (!gameState || gameState.status !== "playing") return gameState ? gameState.progress : 0;
+      const elapsed = (performance.now() - stateReceivedAt) / 1000;
+      return Math.min(99.8, gameState.progress + elapsed * 100 / gameState.level_duration);
+    }
+
+    function headDistance(progress) {
+      const course = COURSES[gameState.level];
+      const leadStart = Math.min(routeLength * .52, (course.balls - 1) * MARBLE_SPACING + 125);
+      return Math.max(20, leadStart + progress / 100 * (routeLength - leadStart - 28) - gameState.pullback);
+    }
+
+    function resizeCanvas() {
+      const bounds = canvas.getBoundingClientRect();
+      if (!bounds.width) return;
+      const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.round(bounds.width * pixelRatio);
+      canvas.height = Math.round(bounds.height * pixelRatio);
+    }
+
+    async function showLevelMap() {
+      try {
+        const state = await api("/api/menu", {});
+        unlockedLevel = Math.max(unlockedLevel, state.unlocked_level);
+        selectedLevel = Math.min(selectedLevel, unlockedLevel);
+        renderCourseGrid();
+        gameScreen.hidden = true;
+        levelScreen.hidden = false;
+        mapButton.hidden = true;
+        outcomePanel.hidden = true;
+      } catch (error) {
+        selectedDescription.textContent = error.message;
+      }
+    }
+
+    async function startLevel(level) {
+      isSubmitting = true;
+      launchButton.disabled = true;
+      try {
+        enterGame(await api("/api/start", { level }));
+      } catch (error) {
+        selectedDescription.textContent = error.message;
+      } finally {
+        isSubmitting = false;
+        launchButton.disabled = false;
+      }
+    }
+
+    function enterGame(state) {
+      levelScreen.hidden = true;
+      gameScreen.hidden = false;
+      mapButton.hidden = false;
+      outcomePanel.hidden = true;
+      seenEventCount = state.event_count;
+      lastShot = null;
+      updateGameState(state);
+      resizeCanvas();
+      requestAnimationFrame(drawFrame);
+    }
+
+    function pointerPosition(event) {
+      const bounds = canvas.getBoundingClientRect();
+      return { x: (event.clientX - bounds.left) * 600 / bounds.width, y: (event.clientY - bounds.top) * 600 / bounds.height };
+    }
+
+    function findInsertionPosition(targetX, targetY) {
+      const directionX = targetX - FROG_X;
+      const directionY = targetY - FROG_Y;
+      const directionLength = Math.hypot(directionX, directionY) || 1;
+      const unitX = directionX / directionLength;
+      const unitY = directionY / directionLength;
+      const lead = headDistance(estimatedProgress());
+      let bestPosition = 0;
+      let bestScore = Infinity;
+      for (let position = 0; position <= gameState.chain.length; position += 1) {
+        const distance = lead - (position - .5) * MARBLE_SPACING;
+        if (distance < 0 || distance > routeLength) continue;
+        const point = pathMeasure.getPointAtLength(distance);
+        const offsetX = point.x - FROG_X;
+        const offsetY = point.y - FROG_Y;
+        const projection = offsetX * unitX + offsetY * unitY;
+        if (projection <= 0) continue;
+        const missDistance = Math.abs(offsetX * unitY - offsetY * unitX);
+        const score = missDistance + projection * .0005;
+        if (score < bestScore) {
+          bestScore = score;
+          bestPosition = position;
+        }
+      }
+      return bestPosition;
+    }
+
+    async function fireAtPointer(event) {
+      if (!gameState || gameState.status !== "playing" || isSubmitting) return;
+      event.preventDefault();
+      const target = pointerPosition(event);
+      aimX = target.x;
+      aimY = target.y;
+      const position = findInsertionPosition(target.x, target.y);
+      lastShot = { x: target.x, y: target.y, at: performance.now() };
+      isSubmitting = true;
+      try {
+        const result = await api("/api/shoot", { position });
+        updateGameState(result);
+        if (result.status === "stage_clear") shotToast.textContent = "Track clear. Next course unlocked.";
+        else if (result.status === "won") shotToast.textContent = "Every course cleared. Circuit master.";
+        else if (result.removed > 0) shotToast.textContent = result.cascades > 0 ? `${result.removed} marbles cleared · chain reaction x${result.cascades + 1}` : `${result.removed} marbles cleared`;
+        else shotToast.textContent = "No match. The chain keeps moving.";
+      } catch (error) {
+        shotToast.textContent = error.message;
+      } finally {
+        isSubmitting = false;
+      }
+    }
+
+    async function pollGame() {
+      if (gameState && gameState.status === "playing" && !isSubmitting) {
+        try {
+          updateGameState(await api("/api/state"));
+        } catch (error) {
+          shotToast.textContent = error.message;
+        }
+      }
+      window.setTimeout(pollGame, 450);
+    }
+
+    courseGrid.addEventListener("click", (event) => {
+      const card = event.target.closest(".course-card");
+      if (!card || card.disabled) return;
+      selectedLevel = Number(card.dataset.level);
+      courseGrid.querySelectorAll(".course-card").forEach((courseCard) => {
+        const selected = courseCard === card;
+        courseCard.classList.toggle("is-selected", selected);
+        courseCard.setAttribute("aria-pressed", String(selected));
+      });
+      updateSelectedCourse();
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      const target = pointerPosition(event);
+      aimX = target.x;
+      aimY = target.y;
+    });
+    canvas.addEventListener("pointerdown", fireAtPointer);
+    launchButton.addEventListener("click", () => startLevel(selectedLevel));
+    backToMapButton.addEventListener("click", showLevelMap);
+    mapButton.addEventListener("click", showLevelMap);
+    restartButton.addEventListener("click", () => startLevel(gameState.level));
+    outcomeSecondary.addEventListener("click", showLevelMap);
+    outcomePrimary.addEventListener("click", () => {
+      const action = outcomePrimary.dataset.action;
+      if (action === "next") startLevel(gameState.unlocked_level);
+      else if (action === "retry") startLevel(gameState.level);
+      else showLevelMap();
+    });
+    window.addEventListener("resize", resizeCanvas);
+
+    async function initialize() {
+      await showLevelMap();
+      pollGame();
+    }
+    initialize();
+  </script>
+</body>
+</html>
